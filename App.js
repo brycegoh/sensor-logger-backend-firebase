@@ -16,22 +16,19 @@ import {
 import Label from './components/Label.js'
 import Graph from './components/Graph.js'
 
-Gyroscope.setUpdateInterval(1000);
-Accelerometer.setUpdateInterval(1000);
-
-
-let headers = ["Gyro","Acc"]
+Gyroscope.setUpdateInterval(500);
+Accelerometer.setUpdateInterval(500);
 
 
 
 export default function App() {
-
+  // const SERVER_URL = "http://192.168.0.118:8080"
   // useEffect(() => {
   //   return () => {
   //     _unsubscribe();
   //   };
   // }, []);
-  const SERVER_URL = ''
+  const [  SERVER_URL, setServerUrl ] = useState("192.168.0.118")
   const [currentToggle, updateToggle] = useState(false)
   const [ gyroArray , setGyro ] = useState( [] )
   const [ accArray, setAcc ] = useState( [] )
@@ -58,10 +55,10 @@ export default function App() {
       setGyro(gyroArray)
       setGyroTime( gyroTime )
       uploadToServer("Gyroscope",gyroscopeData.x,gyroscopeData.y,gyroscopeData.z,time)
-      console.log("---------------------------------")
-      console.log("GYRO"+" " + gyroArray[accTime.length - 1])
-      console.log("TIME"+" " +gyroTime[accTime.length - 1])
-      console.log("---------------------------------")
+      // console.log("---------------------------------")
+      // console.log("GYRO"+" " + gyroArray[accTime.length - 1])
+      // console.log("TIME"+" " +gyroTime[accTime.length - 1])
+      // console.log("---------------------------------")
     });
     Accelerometer.addListener(accelerometerData => {
       accArray.push(accelerometerData)
@@ -76,10 +73,10 @@ export default function App() {
       setAcc(accArray)
       setAccTime(accTime)
       uploadToServer("Accelerometer",accelerometerData.x,accelerometerData.y,accelerometerData.z,time)
-      console.log("---------------------------------")
-      console.log("ACC"+" " + accArray[accTime.length - 1])
-      console.log("TIME"+" " + accTime[accTime.length - 1])
-      console.log("---------------------------------")
+      // console.log("---------------------------------")
+      // console.log("ACC"+" " + accArray[accTime.length - 1])
+      // console.log("TIME"+" " + accTime[accTime.length - 1])
+      // console.log("---------------------------------")
     });
     
     
@@ -106,6 +103,7 @@ export default function App() {
     setGyroTime([])
     setAcc([])
     updateToggle(false)
+    setServerUrl("192.168.0.118")
   }
 
   const uploadToServer = (dataType,dataX,dataY,dataZ,dataTime) => {
@@ -117,7 +115,7 @@ export default function App() {
       dataTime: dataTime
     }
     console.log(JSON.stringify(x))
-    axios.post(SERVER_URL, {
+    axios.post(`http://${SERVER_URL}:8080`, {
       data: x,
       headers: {
         'Content-Type': 'application/json;charset=UTF-8',
@@ -132,30 +130,66 @@ export default function App() {
     });
   }
 
+  const updateServerUrl = (text) => {
+    setServerUrl(text)
+  }
+
 
 
   return (
     <View style={styles.mainContainer}>
-     
-      {/* <Button
+      
+      <View
         style={{
-          width:'100%'
+          flexDirection:'row',
+          justifyContent:'space-around',
+          alignItems:'center',
+          fontSize:30
         }}
-        onPress={ updateGryX }
-        title="Clic"
-      /> */}
-      <Button
+      >
+        <TextInput
         style={{
-          width:'100%',
-          marginBottom:50
+          height:50,
+          fontSize:30 
         }}
-        onPress={ clearState }
-        title="clear"
+        placeholder={SERVER_URL}
+        onChangeText = {updateServerUrl}
+        keyboardType = 'numeric'
+        value = {SERVER_URL}
       />
 
-      <Button
+      </View>
+
+      <View
         style={{
-          width:'100%'
+          flexDirection:'row',
+          justifyContent:'center',
+          alignItems:'center',
+          marginBottom: 20,
+          width:200,
+          height:"20%",
+          fontSize:30
+        }}
+      >
+         <Button
+         style={{
+           width:"100%",
+           fontSize:30
+         }}
+          onPress={ clearState }
+          title="clear"
+        />
+
+      </View>
+       
+     
+
+      <Button
+        styles={{
+          width:'100%',
+          height:"30%",
+          fontSize:30
+          
         }}
         onPress={ changeToggle }
         title="TOGGLE"
@@ -176,6 +210,10 @@ const styles = StyleSheet.create({
   },
   mainContainer:{
     margin: 30,
-    flexDirection: 'column'
+    height:"100%",
+    width:"80%",
+    flexDirection: 'column',
+    alignItems:"center",
+    justifyContent:"flex-start"
   }
 })
