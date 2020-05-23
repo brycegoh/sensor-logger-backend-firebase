@@ -10,7 +10,6 @@
   "dependencies": {
     "axios": "^0.19.2",
     "expo": "~37.0.3",
-    "expo-keep-awake": "~8.1.0",
     "expo-sensors": "~8.1.0",
     "firebase": "7.9.0",
     "react": "~16.9.0",

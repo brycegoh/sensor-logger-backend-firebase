@@ -3,217 +3,262 @@ import React, { useState,useEffect  } from 'react';
 import { useKeepAwake } from 'expo-keep-awake';
 import {
   StyleSheet,
-  Dimensions,
+  Dimensions ,
+  SafeAreaView ,
   Text,
   View,
   TextInput,
-  Button
+  Button,
+  TouchableOpacity,
+  ScrollView 
 } from 'react-native';
 import {
   Accelerometer,
   Gyroscope,
 } from 'expo-sensors';
-import Label from './components/Label.js'
-import Graph from './components/Graph.js'
-
-Gyroscope.setUpdateInterval(500);
-Accelerometer.setUpdateInterval(500);
-
-
+import addData from './firebaseApi'
 
 export default function App() {
-  // const SERVER_URL = "http://192.168.0.118:8080"
-  // useEffect(() => {
-  //   return () => {
-  //     _unsubscribe();
-  //   };
-  // }, []);
-  const [  SERVER_URL, setServerUrl ] = useState("192.168.0.118")
-  const [currentToggle, updateToggle] = useState(false)
-  const [ gyroArray , setGyro ] = useState( [] )
-  const [ accArray, setAcc ] = useState( [] )
-  const [ gyroTime , setGyroTime ] = useState( [] )
-  const [ accTime , setAccTime ] = useState( [] )
-  useKeepAwake()
-  // console.log("GYRO"+" " + JSON.stringify(gyroArray[0]))
-  // {"x":-0.030834078788757324,"y":-0.023252591490745544,"z":-0.0013800500892102718}
-  // console.log('Refresh')
-  
-  
-  const _subscribe = () => {
-    Gyroscope.addListener(gyroscopeData => {
-      let time
-      gyroArray.push(gyroscopeData)
-      
-      if(gyroTime.length === 0){
-        gyroTime.push(0)
-        time = 0
-      }else{
-        gyroTime.push(gyroTime[ gyroTime.length - 1 ] + 500)
-        time = gyroTime[ gyroTime.length - 1 ] + 500
-      }
-      setGyro(gyroArray)
-      setGyroTime( gyroTime )
-      uploadToServer("Gyroscope",gyroscopeData.x,gyroscopeData.y,gyroscopeData.z,time)
-      // console.log("---------------------------------")
-      // console.log("GYRO"+" " + gyroArray[accTime.length - 1])
-      // console.log("TIME"+" " +gyroTime[accTime.length - 1])
-      // console.log("---------------------------------")
-    });
-    Accelerometer.addListener(accelerometerData => {
-      accArray.push(accelerometerData)
-      let time
-      if(accTime.length === 0){
-        accTime.push(0)
-        time = 0
-      }else{
-        accTime.push(accTime[ accTime.length - 1 ] + 500)
-        time = accTime[ accTime.length - 1 ] + 500
-      }
-      setAcc(accArray)
-      setAccTime(accTime)
-      uploadToServer("Accelerometer",accelerometerData.x,accelerometerData.y,accelerometerData.z,time)
-      // console.log("---------------------------------")
-      // console.log("ACC"+" " + accArray[accTime.length - 1])
-      // console.log("TIME"+" " + accTime[accTime.length - 1])
-      // console.log("---------------------------------")
-    });
     
     
-  };
-  const _unsubscribe = () => {
-    Gyroscope.removeAllListeners()
-    Accelerometer.removeAllListeners()
-  };
-  const changeToggle = () => {
-    if (currentToggle === false){
-      _subscribe()
-      updateToggle(true)
-    }else{
-      _unsubscribe()
-      updateToggle(false)
+    const axisLabels = ["X", "Y", "Z"]
+
+    const [ipv4Address , setIpv4Address] = useState("192.168.0.118")
+    const [portNum , setPortNum] = useState("8080")
+    const [displayGyro , setDisplayGyro] = useState(["0","0","0"])
+    const [displayAcc , setDisplayAcc] = useState(["0","0","0"])
+    const [numLoop, setNumLoop] = useState(0)
+    const numLoopRef = React.useRef(numLoop)
+    const setNumLoopRef = data => {
+        numLoopRef.current = data;
+        setNumLoop(data);
+      };
+    // const [interval , setInterval] = useState("500")
+    const [sendToServerStatus , setSendToServerStatus]=useState(false)
+
+    const interval = 100
+    Gyroscope.setUpdateInterval(interval)
+    Accelerometer.setUpdateInterval(interval)
+
+    const resetApp = () => {
+        setIpv4Address("192.168.0.118")
+        setPortNum("8080")
+        setNumLoopRef(0)
+        setSendToServerStatus(false)
     }
-  }
-
-
-  const clearState = () => {
-    console.log("CLEAR STATE----")
-    setGyro([])
-    setAccTime([])
-    setGyroTime([])
-    setAcc([])
-    updateToggle(false)
-    setServerUrl("192.168.0.118")
-  }
-
-  const uploadToServer = (dataType,dataX,dataY,dataZ,dataTime) => {
-    let x = {
-      dataType: dataType,
-      dataX: dataX,
-      dataY: dataY,
-      dataZ: dataZ,
-      dataTime: dataTime
+    const changeIpv4Address = (text) => {
+        setIpv4Address(text)
     }
-    console.log(JSON.stringify(x))
-    axios.post(`http://${SERVER_URL}:8080`, {
-      data: x,
-      headers: {
-        'Content-Type': 'application/json;charset=UTF-8',
-        "Access-Control-Allow-Origin": "*",
-      }
+    const changePortNum = (text) => {
+        setPortNum(text)
+    }
+    const changeSentToServerStatus = ()=>{
+        if (sendToServerStatus === true){
+            setSendToServerStatus(false)
+        }else{
+            setSendToServerStatus(true)
+        }
+    }
+    // const changeInterval = (num) => {
+    //     unsubscribeToSensors()
+    //     setInterval(num)
+    //     if(num.length>=3){
+    //         let intInterval = parseInt(interval)
+    //         Gyroscope.setUpdateInterval( intInterval )
+    //         Accelerometer.setUpdateInterval( intInterval )
+    //         subscribeToSensors()
+    //     }
+        
+    // }
+    const unsubscribeToSensors = () => {
+        // this._gyroSubscription && this._gyroSubscription.remove()
+        // this._gyroSubscription = null;
+        // this._accSubscription && this._accSubscription.remove()
+        // this._accSubscription = null;
+        Gyroscope.removeAllListeners()
+        Accelerometer.removeAllListeners()
+      };
+    const subscribeToSensors = ()=>{
+        let dp = 5
+        Gyroscope.addListener(gyroscopeData => {
+            if( sendToServerStatus === true){
+                let time = (numLoopRef.current) * interval * 10**(-3)
+                uploadToServer("Gyroscope",gyroscopeData.x.toFixed(dp),gyroscopeData.y.toFixed(dp),gyroscopeData.z.toFixed(dp),time.toFixed(12) )
+            }
+            setDisplayGyro([gyroscopeData.x.toFixed(dp),gyroscopeData.y.toFixed(dp),gyroscopeData.z.toFixed(dp)])
+        })
+        Accelerometer.addListener(AccelerometerData => {
+            if( sendToServerStatus === true){
+                let time = (numLoopRef.current) * interval * 10**(-3)
+                uploadToServer("Accelerometer",AccelerometerData.x.toFixed(dp),AccelerometerData.y.toFixed(dp),AccelerometerData.z.toFixed(dp), time.toFixed(12))
+                setNumLoopRef(numLoopRef.current+1)
+            }
+            setDisplayAcc([AccelerometerData.x.toFixed(dp),AccelerometerData.y.toFixed(dp),AccelerometerData.z.toFixed(dp)])
+        })
+    }
+    const uploadToServer = (dataType,dataX,dataY,dataZ,dataTime) => {
+        let x = {
+            dataType: dataType,
+            dataX: dataX,
+            dataY: dataY,
+            dataZ: dataZ,
+            dataTime: dataTime
+          }
+          console.log(JSON.stringify(x))
+          addData( dataType,dataX,dataY,dataZ,dataTime )
+    }
+
+    useEffect(()=>{
+        // Gyroscope.setUpdateInterval( 500 )
+        // Accelerometer.setUpdateInterval( 500 )
+        subscribeToSensors()
+    },[])
+
+    useEffect(()=>{
+        subscribeToSensors()
+        return()=>{unsubscribeToSensors()}
+    },[sendToServerStatus])
+    
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            width: Dimensions.get('window').width,
+            height: Dimensions.get('window').height,
+            flexDirection: "column",
+            justifyContent:"flex-start",
+            alignContent:"center",
+            paddingTop:40
+        },
+        wrapperRow:{
+            flexDirection: 'row',
+            justifyContent:'center',
+            alignContent:'center',
+            backgroundColor:'yellow',
+            height:"10%",
+            paddingBottom: 10,
+            paddingLeft:20,
+            paddingRight: 5,
+            borderWidth: 1,
+            borderColor :"black"
+        },
+        textInput:{
+            fontSize:30,
+        },
+        sensorDisplayRow:{
+            flexDirection: 'row',
+            justifyContent:'flex-start',
+            alignContent:'flex-start',
+            backgroundColor:'grey',
+            paddingTop:10,
+            paddingBottom:10
+        },
+        sensorDisplayColumn:{
+            flexDirection:"column",
+            justifyContent:"space-around",
+            alignContent:"space-between",
+        },
+        displayRow:{
+            flexDirection:"row",
+            justifyContent:"space-between",
+            alignContent:"flex-start",
+            paddingLeft:10
+        },
+        displayText:{
+            fontSize:20,
+        },
+        intervalRow:{
+            flexDirection:"row",
+            justifyContent:"space-around",
+            alignItems:"center"
+        },
+        buttonRow:{
+            flexDirection:"row",
+            justifyContent:"space-around",
+            alignContent:"center",
+            height:"30%"
+        },
+        button:{
+            textAlign:"center",
+            height: 10,
+            height: "30%", 
+            width: "40%",
+            marginTop: 30,
+            backgroundColor:"grey",
+            flexDirection:"column",
+            justifyContent:"center",
+            alignItems:"center"
+        },
+        startButton:{
+            textAlign:"center",
+            height: 10,
+            height: "30%", 
+            width: "40%",
+            marginTop: 30,
+            backgroundColor:"grey",
+            flexDirection:"column",
+            justifyContent:"center",
+            alignItems:"center",
+            backgroundColor: sendToServerStatus ? "red" : "green"
+        },
+        span:{
+            height:"5%"
+        }
+        
     })
-    .then(function (response) {
-      console.log(response);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-  }
-
-  const updateServerUrl = (text) => {
-    setServerUrl(text)
-  }
-
-
 
   return (
-    <View style={styles.mainContainer}>
-      
-      <View
-        style={{
-          flexDirection:'row',
-          justifyContent:'space-around',
-          alignItems:'center',
-          fontSize:30
-        }}
-      >
-        <TextInput
-        style={{
-          height:50,
-          fontSize:30 
-        }}
-        placeholder={SERVER_URL}
-        onChangeText = {updateServerUrl}
-        keyboardType = 'numeric'
-        value = {SERVER_URL}
-      />
+    <SafeAreaView style={styles.container}>
+        <View style={styles.wrapperRow}>
+            <TextInput
+                style={styles.textInput}
+                value={ipv4Address}
+                onChangeText={changeIpv4Address}
+            />
+        </View>
+        <View style={styles.wrapperRow}>
+            <TextInput
+                style={styles.textInput}
+                value={portNum}
+                onChangeText={changePortNum}
+            />
+        </View>
 
-      </View>
+        <View style={styles.sensorDisplayRow}>
+            <View style={styles.sensorDisplayColumn}>
+                {
+                    displayGyro.map((data,i)=>
+                    <View style={styles.displayRow} key={20+i} >
+                        <Text style={styles.displayText}>{`Gyro - ${axisLabels[i]}:   ${data}`}</Text>
+                    </View>
+                    )
+                }
+                <View style={styles.span}></View>
+                {
+                    displayAcc.map((data,i)=>
+                    <View style={styles.displayRow} key={50+i} >
+                        <Text style={styles.displayText}>{`Accel - ${axisLabels[i]}:   ${data}`}</Text>
+                    </View>
+                    )
+                }
+            </View>
+        </View>
+        {/* <View style={styles.intervalRow}>
+            <Text style={styles.textInput}>{`Interval(ms): `}</Text> 
+            <TextInput style={styles.textInput} onChangeText={changeInterval} value={`${interval}`}/>
+        </View> */}
 
-      <View
-        style={{
-          flexDirection:'row',
-          justifyContent:'center',
-          alignItems:'center',
-          marginBottom: 20,
-          width:200,
-          height:"20%",
-          fontSize:30
-        }}
-      >
-         <Button
-         style={{
-           width:"100%",
-           fontSize:30
-         }}
-          onPress={ clearState }
-          title="clear"
-        />
-
-      </View>
-       
-     
-
-      <Button
-        styles={{
-          width:'100%',
-          height:"30%",
-          fontSize:30
-          
-        }}
-        onPress={ changeToggle }
-        title="TOGGLE"
-      />
-      
-
-    </View>
+        <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.startButton}>
+            <Text style={styles.textInput} onPress={changeSentToServerStatus}>{sendToServerStatus ? "STOP" : "START"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button}>
+            <Text onPress={resetApp} style={styles.textInput}>CLEAR</Text>
+        </TouchableOpacity>
+        </View>
+    </SafeAreaView>
+    
   );
+  
 }
 
-const styles = StyleSheet.create({
-  flexColCenterStart: {
-    width: '100%',
-    flexDirection: 'column',
-    justifyContent: "flex-start",
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  mainContainer:{
-    margin: 30,
-    height:"100%",
-    width:"80%",
-    flexDirection: 'column',
-    alignItems:"center",
-    justifyContent:"flex-start"
-  }
-})
