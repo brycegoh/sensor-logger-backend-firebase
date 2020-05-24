@@ -246,7 +246,7 @@ export default function App() {
             flexDirection: "column",
             justifyContent:"flex-start",
             alignContent:"center",
-            paddingTop:40
+            paddingTop:20
         },
         wrapperRow:{
             flexDirection: 'row',
@@ -255,7 +255,7 @@ export default function App() {
             alignItems:"center",
             backgroundColor:'yellow',
             height:"10%",
-            paddingBottom: 10,
+            paddingBottom: 5,
             paddingLeft:20,
             paddingRight: 5,
             borderWidth: 1,
@@ -291,7 +291,7 @@ export default function App() {
         intervalRow:{
             flexDirection:"row",
             justifyContent:"space-around",
-            alignItems:"center"
+            alignItems:"flex-start"
         },
         buttonRow:{
             flexDirection:"row",
@@ -350,12 +350,12 @@ export default function App() {
         </View>
         <View style={styles.wrapperRow}>
             <TouchableOpacity style={styles.intervalRow}>
-                <Text style={styles.textInput} onPress={changeSendToIpv4Status}>{sendToIpv4Status ? "SENDING TO IPV4" : "NOT SENDING TO IPV4"}</Text>
+                <Text style={styles.textInput} onPress={changeSendToIpv4Status}>{`IPV4: ${sendToIpv4Status ? "YES" : "NO"}`}</Text>
             </TouchableOpacity>
         </View>
         <View style={styles.wrapperRow}>
             <TouchableOpacity style={styles.intervalRow}>
-                <Text style={styles.textInput} onPress={changeSendToFirestoreStatus}>{sendToFirestoreStatus ? "SENDING TO FIRESTORE" : "NOT SENDING TO FIRESTORE"}</Text>
+                <Text style={styles.textInput} onPress={changeSendToFirestoreStatus}>{`FIRESTORE: ${sendToFirestoreStatus ? "YES" : "NO"}`}</Text>
             </TouchableOpacity>
         </View>
 
@@ -376,15 +376,14 @@ export default function App() {
                     </View>
                     )
                 }
+                <View style={styles.displayRow}>
+                    <Text style={styles.displayText} >{`Time Elapsed:   ${displayTime.toFixed(2)}`}</Text>
+                </View>
             </View>
         </View>
         <View style={styles.intervalRow}>
             <Text style={styles.textInput}>{`Interval(ms): `}</Text> 
             <TextInput keyboardType="numeric" returnKeyType='done' style={styles.textInput} onChangeText={changeInterval} value={`${interval}`}/>
-            
-        </View>
-        <View style={styles.intervalRow}>
-            <Text style={styles.textInput} >{`Time Elapsed:   ${displayTime.toFixed(2)}`}</Text>
         </View>
         <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.startButton}>
