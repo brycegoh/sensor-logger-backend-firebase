@@ -1,21 +1,26 @@
 import firebaseConfig from './serverConfig.js'
 import * as firebase from 'firebase'
-import '@firebase/firestore';
+import firestore from 'firebase/firestore'
+
 
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-const addData = ( collectionName,xValue,yValue,zValue,timeValue ) => {
+export const sendToFirebase = (collectionName,xValue,yValue,zValue,dataTime ) => {
     const timeStamp = Date.now()
-    firebase.firestore().collection("sensor").doc(collectionName).collection("data").add({
-        xValue,yValue,zValue,timeValue
+    return firebase.firestore().collection("sensor").doc(collectionName).collection(new Date().toJSON().slice(0,10).replace(/-/g,'')).add({
+        xValue,yValue,zValue,dataTime
     })
-    .then((data)=>{
-        console.log("STORED")
-        return data
-    })
-    .catch(e=>console.log(e))
 }
 
-export default addData
+export const sendPacketToFirestore = ({accelerometer,gyroscope}) => {
+    // accelerometer = [{x,y,z,time}]
+    accelerometer.map(dataObj=>{
+        firebase.firestore().collection("sensor").doc("Accelerometer").collection(new Date().toJSON().slice(0,10).replace(/-/g,'')).add(dataObj)
+    })
+
+    gyroscope.map(dataObj=>{
+        firebase.firestore().collection("sensor").doc("Gyroscope").collection(new Date().toJSON().slice(0,10).replace(/-/g,'')).add(dataObj)
+    })
+}
