@@ -8,9 +8,22 @@ if (!firebase.apps.length) {
 }
 
 export const sendToFirebase = (collectionName,xValue,yValue,zValue,dataTime ) => {
-    const timeStamp = Date.now()
-    return firebase.firestore().collection("sensor").doc(collectionName).collection(new Date().toJSON().slice(0,10).replace(/-/g,'')).add({
-        xValue,yValue,zValue,dataTime
+    console.log(typeof xValue)
+    console.log(typeof dataTime)
+    return firebase.firestore().collection(collectionName).add({
+        dataTime: dataTime,
+        xtime: {
+            time: dataTime,
+            value: xValue.toFixed(3)
+        },
+        ytime: {
+            time: dataTime,
+            value: yValue.toFixed(3)
+        },
+        ztime: {
+            time: dataTime,
+            value: zValue.toFixed(3)
+        },
     })
 }
 

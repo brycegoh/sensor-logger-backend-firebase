@@ -13,6 +13,7 @@ import {
 import {
   Accelerometer,
   Gyroscope,
+  DeviceMotion 
 } from 'expo-sensors';
 import * as firebaseApi from './firebaseApi'
 import { YellowBox } from 'react-native';
@@ -25,6 +26,7 @@ export default function App() {
     const axisLabels = ["X", "Y", "Z"]
     let subscribeToGyro
     let subscribeToAcc
+    let deviceMotionSub
 
     const [ipv4Address , setIpv4Address] = useState("192.168.0.118")
     const [portNum , setPortNum] = useState("8080")
@@ -45,21 +47,21 @@ export default function App() {
     };
     const [interval , setInterval] = useState("1000")
     const [sendToServerStatus , setSendToServerStatus]=useState(false)
-    const [sendToIpv4Status , setSendToIpv4Status] = useState(true)
-    const [sendToFirestoreStatus, setSendToFirestoreStatus] = useState(false)
+    const [sendToIpv4Status , setSendToIpv4Status] = useState(false)
+    const [sendToFirestoreStatus, setSendToFirestoreStatus] = useState(true)
 
-    const [androidGyroDataStore , setAndroidGyroDataStore] = useState([])
-    const androidGyroDataStoreRef = React.useRef(androidGyroDataStore)
-    const setAndroidGyroDataStoreRef = data => {
-        androidGyroDataStoreRef.current = data;
-        setAndroidGyroDataStore(data);
-    };
-    const [androidAccDataStore , setAndroidAccDataStore] = useState([])
-    const androidAccDataStoreRef = React.useRef(androidAccDataStore)
-    const setAndroidAccDataStoreRef = data => {
-        androidAccDataStoreRef.current = data;
-        setAndroidAccDataStore(data);
-    };
+    // const [androidGyroDataStore , setAndroidGyroDataStore] = useState([])
+    // const androidGyroDataStoreRef = React.useRef(androidGyroDataStore)
+    // const setAndroidGyroDataStoreRef = data => {
+    //     androidGyroDataStoreRef.current = data;
+    //     setAndroidGyroDataStore(data);
+    // };
+    // const [androidAccDataStore , setAndroidAccDataStore] = useState([])
+    // const androidAccDataStoreRef = React.useRef(androidAccDataStore)
+    // const setAndroidAccDataStoreRef = data => {
+    //     androidAccDataStoreRef.current = data;
+    //     setAndroidAccDataStore(data);
+    // };
     const resetApp = () => {
         setIpv4Address("192.168.0.118")
         setPortNum("8080")
@@ -68,10 +70,10 @@ export default function App() {
         setNumLoopAccRef(0)
         setSendToServerStatus(false)
         setInterval("1000")
-        setAndroidGyroDataStoreRef([])
-        setAndroidAccDataStoreRef([])
+        // setAndroidGyroDataStoreRef([])
+        // setAndroidAccDataStoreRef([])
         setSendToFirestoreStatus(true)
-        setSendToIpv4Status(true)
+        setSendToIpv4Status(false)
         
     }
     const changeIpv4Address = (text) => {
@@ -97,14 +99,14 @@ export default function App() {
     const changeSentToServerStatus = ()=>{
         if (sendToServerStatus === true){
             setSendToServerStatus(false)
-            if(Platform.OS === "android" && sendToFirestoreStatus){
-                console.log(androidAccDataStore)
-                console.log(androidGyroDataStore)
-                firebaseApi.sendPacketToFirestore({
-                    accelerometer: androidAccDataStore,
-                    gyroscope: androidGyroDataStore
-                })
-            }
+            // if(Platform.OS === "android" && sendToFirestoreStatus){
+            //     console.log(androidAccDataStore)
+            //     console.log(androidGyroDataStore)
+            //     firebaseApi.sendPacketToFirestore({
+            //         accelerometer: androidAccDataStore,
+            //         gyroscope: androidGyroDataStore
+            //     })
+            // }
         }else{
             setSendToServerStatus(true)
         }
@@ -119,14 +121,14 @@ export default function App() {
         // }
     }
     const unsubscribeToSensors = () => {
-        // this._gyroSubscription && this._gyroSubscription.remove()
-        // this._gyroSubscription = null;
-        // this._accSubscription && this._accSubscription.remove()
-        // this._accSubscription = null;
-        subscribeToGyro && Gyroscope.removeAllListeners()
-        subscribeToAcc && Accelerometer.removeAllListeners()
-        subscribeToGyro = null
-        subscribeToAcc = null
+
+
+        deviceMotionSub && deviceMotionSub.remove()
+
+        // subscribeToGyro && Gyroscope.removeAllListeners()
+        // subscribeToAcc && Accelerometer.removeAllListeners()
+        // subscribeToGyro = null
+        // subscribeToAcc = null
       };
     const sendToIpv4 = (x) => {
     let promise = axios.post(`http://${ipv4Address}:${portNum}`, {
@@ -139,84 +141,133 @@ export default function App() {
     return promise
     }
     const cacheOrSendToFirestore = ({dataType,dataX,dataY,dataZ,dataTime}) => {
-        if(Platform.OS === "ios" && sendToFirestoreStatus){
+        //Platform.OS === "ios" &&
+        if( sendToFirestoreStatus ){
             firebaseApi.sendToFirebase(dataType,dataX,dataY,dataZ,dataTime)
         }
-        if(Platform.OS === "android" && dataType === "Accelerometer" && sendToFirestoreStatus){
-            androidAccDataStoreRef.current.push({dataX,dataY,dataZ,dataTime})
-            setAndroidAccDataStoreRef(androidAccDataStoreRef.current)
-        }
-        if(Platform.OS === "android" && dataType === "Gyroscope" && sendToFirestoreStatus){
-            androidGyroDataStoreRef.current.push({dataX,dataY,dataZ,dataTime})
-            setAndroidGyroDataStoreRef(androidGyroDataStoreRef.current)
-        }
+        // if(Platform.OS === "android" && dataType === "Accelerometer" && sendToFirestoreStatus){
+        //     androidAccDataStoreRef.current.push({dataX,dataY,dataZ,dataTime})
+        //     setAndroidAccDataStoreRef(androidAccDataStoreRef.current)
+        // }
+        // if(Platform.OS === "android" && dataType === "Gyroscope" && sendToFirestoreStatus){
+        //     androidGyroDataStoreRef.current.push({dataX,dataY,dataZ,dataTime})
+        //     setAndroidGyroDataStoreRef(androidGyroDataStoreRef.current)
+        // }
         
         return
     }
     const subscribeToSensors = ()=>{
-        Gyroscope.setUpdateInterval(parseInt(interval))
-        Accelerometer.setUpdateInterval(parseInt(interval))
-        let dp = 5
-        subscribeToGyro = Gyroscope.addListener(gyroscopeData => {
-            if( sendToServerStatus === true){
+        DeviceMotion.setUpdateInterval(parseInt(interval))
+        deviceMotionSub = DeviceMotion.addListener((event)=>{
+            let{
+                acceleration,
+                accelerationIncludingGravity,
+                rotation,
+                rotationRate,
+                orientation  
+            } = event
+            let dp = 3
+            if(sendToServerStatus === true){
                 let time = (numLoopRef.current) * interval * 10**(-3)
-                let x = {
+                let gyroData = {
                     dataType: "Gyroscope",
-                    dataX: gyroscopeData.x.toFixed(dp),
-                    dataY: gyroscopeData.y.toFixed(dp),
-                    dataZ: gyroscopeData.z.toFixed(dp),
+                    dataX:  rotationRate.beta,
+                    dataY: rotationRate.gamma,
+                    dataZ: rotationRate.alpha,
                     dataTime: time
-                  }
+                }
+                let accData = {
+                    dataType:"Accelerometer",
+                    dataX: accelerationIncludingGravity.x,
+                    dataY: accelerationIncludingGravity.y,
+                    dataZ: accelerationIncludingGravity.z,
+                    dataTime: time
+                }
+                if(sendToFirestoreStatus){
+                    cacheOrSendToFirestore(gyroData)
+                    cacheOrSendToFirestore(accData)
+                }
                 if(sendToIpv4Status){
-                    sendToIpv4(x)
+                    sendToIpv4(gyroData)
                     .then( (response) =>{
-                        if(sendToFirestoreStatus){
-                            cacheOrSendToFirestore(x)
-                        }
-                        setNumLoopRef(numLoopRef.current+1)
-                        setDisplayTime(time)
+                        sendToIpv4(accData)
                     })
                     .catch((e) =>{
                         console.log(e.message)
                     });
-                }else{
-                    if(sendToFirestoreStatus){
-                        cacheOrSendToFirestore(x)
-                    }
-                    setNumLoopRef(numLoopRef.current+1)
-                    setDisplayTime(time)
                 }
-                
+                setNumLoopRef(numLoopRef.current+1)
+                setDisplayTime(time)
+            }else{
+                setDisplayAcc([accelerationIncludingGravity.x.toFixed(dp),accelerationIncludingGravity.y.toFixed(dp),accelerationIncludingGravity.z.toFixed(dp)])
+                setDisplayGyro([rotationRate.beta.toFixed(dp),rotationRate.gamma.toFixed(dp),rotationRate.alpha.toFixed(dp)])
             }
-            setDisplayGyro([gyroscopeData.x.toFixed(dp),gyroscopeData.y.toFixed(dp),gyroscopeData.z.toFixed(dp)])
         })
-        subscribeToAcc = Accelerometer.addListener(AccelerometerData => {
-            if( sendToServerStatus === true){
-                let time = (numLoopAccRef.current) * interval * 10**(-3)
-                let x = {
-                    dataType: "Accelerometer",
-                    dataX: AccelerometerData.x.toFixed(dp),
-                    dataY: AccelerometerData.y.toFixed(dp),
-                    dataZ: AccelerometerData.z.toFixed(dp),
-                    dataTime: time
-                  }
-                if(sendToIpv4Status){
-                    sendToIpv4(x)
-                    .then( (response) =>{
-                        cacheOrSendToFirestore(x)
-                        setNumLoopAccRef(numLoopAccRef.current+1)
-                    })
-                    .catch((e)=>{
-                        console.log(e.message)
-                    })
-                }else{
-                    cacheOrSendToFirestore(x)
-                    setNumLoopAccRef(numLoopAccRef.current+1)
-                }
+
+
+        // Gyroscope.setUpdateInterval(parseInt(interval))
+        // Accelerometer.setUpdateInterval(parseInt(interval))
+        // let dp = 5
+        // subscribeToGyro = Gyroscope.addListener(gyroscopeData => {
+        //     if( sendToServerStatus === true){
+        //         let time = (numLoopRef.current) * interval * 10**(-3)
+        //         let x = {
+        //             dataType: "Gyroscope",
+        //             dataX: gyroscopeData.x.toFixed(dp),
+        //             dataY: gyroscopeData.y.toFixed(dp),
+        //             dataZ: gyroscopeData.z.toFixed(dp),
+        //             dataTime: time
+        //           }
+        //         if(sendToIpv4Status){
+        //             sendToIpv4(x)
+        //             .then( (response) =>{
+        //                 if(sendToFirestoreStatus){
+        //                     cacheOrSendToFirestore(x)
+        //                 }
+        //                 setNumLoopRef(numLoopRef.current+1)
+        //                 setDisplayTime(time)
+        //             })
+        //             .catch((e) =>{
+        //                 console.log(e.message)
+        //             });
+        //         }else{
+        //             if(sendToFirestoreStatus){
+        //                 cacheOrSendToFirestore(x)
+        //             }
+        //             setNumLoopRef(numLoopRef.current+1)
+        //             setDisplayTime(time)
+        //         }
                 
-            }
-            setDisplayAcc([AccelerometerData.x.toFixed(dp),AccelerometerData.y.toFixed(dp),AccelerometerData.z.toFixed(dp)])
-        })
+        //     }
+        //     setDisplayGyro([gyroscopeData.x.toFixed(dp),gyroscopeData.y.toFixed(dp),gyroscopeData.z.toFixed(dp)])
+        // })
+        // subscribeToAcc = Accelerometer.addListener(AccelerometerData => {
+        //     if( sendToServerStatus === true){
+        //         let time = (numLoopAccRef.current) * interval * 10**(-3)
+        //         let x = {
+        //             dataType: "Accelerometer",
+        //             dataX: AccelerometerData.x.toFixed(dp),
+        //             dataY: AccelerometerData.y.toFixed(dp),
+        //             dataZ: AccelerometerData.z.toFixed(dp),
+        //             dataTime: time
+        //           }
+        //         if(sendToIpv4Status){
+        //             sendToIpv4(x)
+        //             .then( (response) =>{
+        //                 cacheOrSendToFirestore(x)
+        //                 setNumLoopAccRef(numLoopAccRef.current+1)
+        //             })
+        //             .catch((e)=>{
+        //                 console.log(e.message)
+        //             })
+        //         }else{
+        //             cacheOrSendToFirestore(x)
+        //             setNumLoopAccRef(numLoopAccRef.current+1)
+        //         }
+                
+        //     }
+        //     setDisplayAcc([AccelerometerData.x.toFixed(dp),AccelerometerData.y.toFixed(dp),AccelerometerData.z.toFixed(dp)])
+        // })
     }
 
     useEffect(()=>{
