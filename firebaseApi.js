@@ -1,4 +1,4 @@
-import firebaseConfig from './serverConfig.js'
+import firebaseConfig from './firebaseConfig.js'
 import * as firebase from 'firebase'
 import firestore from 'firebase/firestore'
 
