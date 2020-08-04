@@ -1,2 +1,2 @@
 # ReactNativeSensor
-Firebase and ipv6 transfer
+Firebase / ipv4 raw accelerometer data transfer from expo react native app.
