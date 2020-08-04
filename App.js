@@ -28,7 +28,7 @@ export default function App() {
     let subscribeToAcc
     let deviceMotionSub
 
-    const [ipv4Address , setIpv4Address] = useState("192.168.0.118")
+    const [ipv4Address , setIpv4Address] = useState("000.000.000.000")
     const [portNum , setPortNum] = useState("8080")
     const [displayGyro , setDisplayGyro] = useState(["0","0","0"])
     const [displayAcc , setDisplayAcc] = useState(["0","0","0"])
